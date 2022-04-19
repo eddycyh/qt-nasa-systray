@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(PROJNAME "NASA_APOD")
 set(APIHANDLER "APIHANDLER")
 set(RSC_DIR ${CMAKE_SOURCE_DIR}/icons)
+set(API_DIR ${CMAKE_SOURCE_DIR}/api_handler)
 
 set(CMAKE_PREFIX_PATH "C:\\Qt\\Qt5.12.12\\5.12.12\\msvc2017_64")
 set(PROG_DIR ${CMAKE_SOURCE_DIR})
@@ -25,5 +26,12 @@ find_package(Qt5Svg REQUIRED)
 include(FeatureSummary)
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)
 
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/libcurl/cmake
+)
+
+find_package(LIBCURL REQUIRED)
+
 # Include sub-projects.
+add_subdirectory("api_handler")
 add_subdirectory ("src")
