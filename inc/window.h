@@ -17,6 +17,9 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QScrollArea>
+#include <memory>
+#include "IApiHandler.h"
 
 class QAction;
 class QCheckBox;
@@ -34,7 +37,7 @@ class Window : public QDialog
     Q_OBJECT
 
 public:
-    Window();
+    Window(std::shared_ptr<durr::IApiHandler> api);
 
     void setVisible(bool visible);
 
@@ -53,10 +56,22 @@ private:
     void createActions();
     void createTrayIcon();
 
+    QGroupBox* imageGroupBox;
     QGroupBox* iconGroupBox;
     QLabel* iconLabel;
     QComboBox* iconComboBox;
     QCheckBox* showIconCheckBox;
+    QLabel* dateLbl;
+    QLabel* dateVal;
+    QLabel* titleLbl;
+    QLabel* titleVal;
+    QImage* apodImg;
+    QLabel* apodLbl;
+    QScrollArea* scrollArea;
+    QLabel* explanationLbl;
+    QLabel* explanationVal;
+    QLabel* statusLbl;
+    QLabel* statusVal;
 
     QGroupBox* messageGroupBox;
     QLabel* typeLabel;
@@ -66,9 +81,19 @@ private:
     QLabel* bodyLabel;
     QComboBox* typeComboBox;
     QSpinBox* durationSpinBox;
-    QLineEdit* titleEdit;
+    QLabel* titleEdit;
     QTextEdit* bodyEdit;
     QPushButton* showMessageButton;
+    
+    QLabel* countLbl;
+    QLabel* countVal;
+    QLabel* nameLbl;
+    QLabel* nameVal;
+    QLabel* estDtLbl;
+    QLabel* estDtVal;
+    QLabel* mDistanceLbl;
+    QLabel* mDistanceVal;
+    QLabel* warningLbl;
 
     QAction* minimizeAction;
     QAction* maximizeAction;
@@ -77,6 +102,7 @@ private:
 
     QSystemTrayIcon* trayIcon;
     QMenu* trayIconMenu;
+    std::shared_ptr<durr::IApiHandler> api = nullptr;
 };
 
 #endif	// _WINDOW_H_

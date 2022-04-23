@@ -3,7 +3,7 @@
 #include "window.h"
 #include <iostream>
 
-Window::Window()
+Window::Window(std::shared_ptr<durr::IApiHandler> api) : api(api)
 {
     createIconGroupBox();
     createMessageGroupBox();
@@ -23,6 +23,7 @@ Window::Window()
         this, SLOT(iconActivated(QSystemTrayIcon::ActivationReason)));
 
     QVBoxLayout* mainLayout = new QVBoxLayout;
+    mainLayout->addWidget(imageGroupBox);
     mainLayout->addWidget(iconGroupBox);
     mainLayout->addWidget(messageGroupBox);
     setLayout(mainLayout);
@@ -101,7 +102,29 @@ void Window::messageClicked()
 
 void Window::createIconGroupBox()
 {
-    iconGroupBox = new QGroupBox(tr("Tray Icon"));
+    std::string imagePath = "out.jpg";
+    std::string date, title, imgUrl, explanation;
+    bool isDataReady = false;
+    if (api) {
+        isDataReady = api->getAPODDetailInfo(date, title, imgUrl, explanation);
+    }
+
+    imageGroupBox = new QGroupBox(tr("Astronomy of the day"));
+    api->downloadImage(imgUrl, imagePath);
+    apodImg = new QImage(imagePath.c_str());
+    apodLbl = new QLabel("");
+    apodLbl->setPixmap(QPixmap::fromImage(*apodImg));
+    apodLbl->adjustSize();
+    /*scrollArea = new QScrollArea();
+    scrollArea->setWidget(apodLbl);
+    scrollArea->setMinimumSize(256, 256);
+    scrollArea->setMaximumSize(512, 512);*/
+    
+    QVBoxLayout* imageLayout = new QVBoxLayout;
+    imageLayout->addWidget(apodLbl);
+    imageGroupBox->setLayout(imageLayout);
+
+    iconGroupBox = new QGroupBox(tr("APOD Info"));
 
     iconLabel = new QLabel("Icon:");
 
@@ -115,17 +138,36 @@ void Window::createIconGroupBox()
     showIconCheckBox = new QCheckBox(tr("Show icon"));
     showIconCheckBox->setChecked(true);
 
-    QHBoxLayout* iconLayout = new QHBoxLayout;
-    iconLayout->addWidget(iconLabel);
+    dateLbl = new QLabel(tr("Date:"));
+    dateVal = new QLabel(tr(date.c_str()));
+
+    titleLbl = new QLabel(tr("Title:"));
+    titleVal = new QLabel(tr(title.c_str()));
+
+    explanationLbl = new QLabel(tr("Explanation:"));
+    explanationVal = new QLabel(tr(explanation.c_str()));
+    explanationVal->setWordWrap(true);
+
+    QGridLayout* iconLayout = new QGridLayout;
+    /*iconLayout->addWidget(iconLabel);
     iconLayout->addWidget(iconComboBox);
     iconLayout->addStretch();
-    iconLayout->addWidget(showIconCheckBox);
+    iconLayout->addWidget(showIconCheckBox);*/
+    
+    iconLayout->addWidget(dateLbl, 0, 0);
+    iconLayout->addWidget(dateVal, 0, 1);
+    iconLayout->addWidget(titleLbl, 1, 0);
+    iconLayout->addWidget(titleVal, 1, 1);
+    iconLayout->addWidget(explanationLbl, 3, 0);
+    iconLayout->addWidget(explanationVal, 3, 1);
     iconGroupBox->setLayout(iconLayout);
 }
 
 void Window::createMessageGroupBox()
 {
-    messageGroupBox = new QGroupBox(tr("Balloon Message"));
+    std::string date, title, name, estDt, missDistance, imgUrl, explanation;
+
+    messageGroupBox = new QGroupBox(tr("NeoWs info"));
 
     typeLabel = new QLabel(tr("Type:"));
 
@@ -155,7 +197,7 @@ void Window::createMessageGroupBox()
 
     titleLabel = new QLabel(tr("Title:"));
 
-    titleEdit = new QLineEdit(tr("Cannot connect to network"));
+    titleEdit = new QLabel(tr("Cannot connect to network"));
 
     bodyLabel = new QLabel(tr("Body:"));
 
@@ -165,9 +207,33 @@ void Window::createMessageGroupBox()
 
     showMessageButton = new QPushButton(tr("Show Message"));
     showMessageButton->setDefault(true);
+    bool res = false;
+    if (api) {
+        res = api->getAPODBasicInfo(date, title);
+        res = api->getNearestNeowsInfo(date, date, name, estDt, missDistance);
+    }
 
+    
     QGridLayout* messageLayout = new QGridLayout;
-    messageLayout->addWidget(typeLabel, 0, 0);
+    if (res) {
+        nameLbl = new QLabel(tr("Name:"));
+        nameVal = new QLabel(tr(name.c_str()));
+        estDtLbl = new QLabel(tr("Approach DateTime:"));
+        estDtVal = new QLabel(tr(estDt.c_str()));
+        mDistanceLbl = new QLabel(tr("Distance (lunar):"));
+        mDistanceVal = new QLabel(tr(missDistance.c_str()));
+        messageLayout->addWidget(nameLbl, 0, 0);
+        messageLayout->addWidget(nameVal, 0, 1);
+        messageLayout->addWidget(estDtLbl, 1, 0);
+        messageLayout->addWidget(estDtVal, 1, 1);
+        messageLayout->addWidget(mDistanceLbl, 2, 0);
+        messageLayout->addWidget(mDistanceVal, 2, 1);
+    }
+    else {
+        warningLbl = new QLabel(tr("No Object found!!!"));
+        messageLayout->addWidget(warningLbl);
+    }
+    /*messageLayout->addWidget(typeLabel, 0, 0);
     messageLayout->addWidget(typeComboBox, 0, 1, 1, 2);
     messageLayout->addWidget(durationLabel, 1, 0);
     messageLayout->addWidget(durationSpinBox, 1, 1);
@@ -178,7 +244,7 @@ void Window::createMessageGroupBox()
     messageLayout->addWidget(bodyEdit, 3, 1, 2, 4);
     messageLayout->addWidget(showMessageButton, 5, 4);
     messageLayout->setColumnStretch(3, 1);
-    messageLayout->setRowStretch(4, 1);
+    messageLayout->setRowStretch(4, 1);*/
     messageGroupBox->setLayout(messageLayout);
 }
 

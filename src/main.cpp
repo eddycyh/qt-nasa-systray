@@ -7,16 +7,13 @@
 #include "window.h"
 #include "IApiHandler.h"
 
+std::string apiKey = "70O0cmhoP9IZshLlLVoGlN0kKq0qNy6cjvZeIvLx";
+std::string backgroundImg = "background.jpg";
 int main(int argc, char* argv[])
 {
-    std::string date, title;
-    auto apiInstance = durr::IApiHandler::getInstance();
-    apiInstance->getAPODBasicInfo(date, title);
-
     Q_INIT_RESOURCE(systray);
-
+    auto instance = durr::IApiHandler::getInstance(apiKey);
     QApplication app(argc, argv);
-    
     if (!QSystemTrayIcon::isSystemTrayAvailable()) {
         QMessageBox::critical(0, QObject::tr("Systray"),
             QObject::tr("Error, Qt object not found "
@@ -24,8 +21,7 @@ int main(int argc, char* argv[])
         return 1;
     }
     QApplication::setQuitOnLastWindowClosed(false);
-
-    Window window;
+    Window window(instance);
     window.show();
     return app.exec();
 }
