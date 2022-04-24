@@ -45,7 +45,7 @@ protected:
     void closeEvent(QCloseEvent* event);
 
 private slots:
-    void setIcon(int index);
+    void setIcon();
     void iconActivated(QSystemTrayIcon::ActivationReason reason);
     void showMessage();
     void messageClicked();
@@ -57,10 +57,7 @@ private:
     void createTrayIcon();
 
     QGroupBox* imageGroupBox;
-    QGroupBox* iconGroupBox;
-    QLabel* iconLabel;
-    QComboBox* iconComboBox;
-    QCheckBox* showIconCheckBox;
+    QGroupBox* apodGroupBox;
     QLabel* dateLbl;
     QLabel* dateVal;
     QLabel* titleLbl;
@@ -73,18 +70,7 @@ private:
     QLabel* statusLbl;
     QLabel* statusVal;
 
-    QGroupBox* messageGroupBox;
-    QLabel* typeLabel;
-    QLabel* durationLabel;
-    QLabel* durationWarningLabel;
-    QLabel* titleLabel;
-    QLabel* bodyLabel;
-    QComboBox* typeComboBox;
-    QSpinBox* durationSpinBox;
-    QLabel* titleEdit;
-    QTextEdit* bodyEdit;
-    QPushButton* showMessageButton;
-    
+    QGroupBox* neowsGroupBox;    
     QLabel* countLbl;
     QLabel* countVal;
     QLabel* nameLbl;

@@ -5,32 +5,24 @@
 
 Window::Window(std::shared_ptr<durr::IApiHandler> api) : api(api)
 {
+    
     createIconGroupBox();
     createMessageGroupBox();
-
-    iconLabel->setMinimumWidth(durationLabel->sizeHint().width());
-
     createActions();
     createTrayIcon();
-
-    connect(showMessageButton, SIGNAL(clicked()), this, SLOT(showMessage()));
-    connect(showIconCheckBox, SIGNAL(toggled(bool)),
-        trayIcon, SLOT(setVisible(bool)));
-    connect(iconComboBox, SIGNAL(currentIndexChanged(int)),
-        this, SLOT(setIcon(int)));
     connect(trayIcon, SIGNAL(messageClicked()), this, SLOT(messageClicked()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
         this, SLOT(iconActivated(QSystemTrayIcon::ActivationReason)));
 
     QVBoxLayout* mainLayout = new QVBoxLayout;
     mainLayout->addWidget(imageGroupBox);
-    mainLayout->addWidget(iconGroupBox);
-    mainLayout->addWidget(messageGroupBox);
+    mainLayout->addWidget(apodGroupBox);
+    mainLayout->addWidget(neowsGroupBox);
     setLayout(mainLayout);
 
-    iconComboBox->setCurrentIndex(1);
+    setIcon();
     trayIcon->show();
-
+    showMessage();
     setWindowTitle(tr("Systray"));
     resize(400, 300);
 }
@@ -56,17 +48,12 @@ void Window::closeEvent(QCloseEvent* event)
     }
 }
 
-void Window::setIcon(int index)
+void Window::setIcon()
 {
-    QIcon icon = iconComboBox->itemIcon(index);
-    std::cout << "Setting item to index: " << index
-        << " QIcon.name: " << icon.name().toStdString()
-        << std::endl;
-    //QIcon icon = QIcon(":/bad.svg");
+    QIcon icon = QIcon(":/heart.svg");
     trayIcon->setIcon(icon);
     setWindowIcon(icon);
-
-    trayIcon->setToolTip(iconComboBox->itemText(index));
+    trayIcon->setToolTip("Astronomy of the day");
 }
 
 void Window::iconActivated(QSystemTrayIcon::ActivationReason reason)
@@ -74,8 +61,7 @@ void Window::iconActivated(QSystemTrayIcon::ActivationReason reason)
     switch (reason) {
     case QSystemTrayIcon::Trigger:
     case QSystemTrayIcon::DoubleClick:
-        iconComboBox->setCurrentIndex((iconComboBox->currentIndex() + 1)
-            % iconComboBox->count());
+        showNormal();
         break;
     case QSystemTrayIcon::MiddleClick:
         showMessage();
@@ -87,17 +73,23 @@ void Window::iconActivated(QSystemTrayIcon::ActivationReason reason)
 
 void Window::showMessage()
 {
-    QSystemTrayIcon::MessageIcon icon = QSystemTrayIcon::MessageIcon(
-        typeComboBox->itemData(typeComboBox->currentIndex()).toInt());
-    trayIcon->showMessage(titleEdit->text(), bodyEdit->toPlainText(), icon,
-        durationSpinBox->value() * 1000);
+    std::string date, title, msg;
+    int elementCount;
+    bool res = false;
+    QIcon icon = QIcon(":/heart.svg");
+    if (api) {
+        res = api->getAPODBasicInfo(date, title);
+        res = api->listNeows(date, date, elementCount);
+        msg = std::string("Date: ") + date + std::string("\nTitle: ") + title + std::string("\nWarning: ") + std::to_string(elementCount);
+    }
+    if(res)
+        trayIcon->showMessage("Astronomy of the day", msg.c_str(), icon,
+            3000);
 }
 
 void Window::messageClicked()
 {
-    QMessageBox::information(0, tr("Systray"),
-        tr("Sorry, I already gave what help I could.\n"
-            "Maybe you should try asking a human?"));
+
 }
 
 void Window::createIconGroupBox()
@@ -115,29 +107,12 @@ void Window::createIconGroupBox()
     apodLbl = new QLabel("");
     apodLbl->setPixmap(QPixmap::fromImage(*apodImg));
     apodLbl->adjustSize();
-    /*scrollArea = new QScrollArea();
-    scrollArea->setWidget(apodLbl);
-    scrollArea->setMinimumSize(256, 256);
-    scrollArea->setMaximumSize(512, 512);*/
     
     QVBoxLayout* imageLayout = new QVBoxLayout;
     imageLayout->addWidget(apodLbl);
     imageGroupBox->setLayout(imageLayout);
 
-    iconGroupBox = new QGroupBox(tr("APOD Info"));
-
-    iconLabel = new QLabel("Icon:");
-
-    iconComboBox = new QComboBox;
-    iconComboBox->addItem(QIcon(":/bad.svg"), tr("Bad"));
-    iconComboBox->addItem(QIcon(":/heart.svg"), tr("Heart"));
-    iconComboBox->addItem(QIcon(":/trash.svg"), tr("Trash"));
-    iconComboBox->addItem(QIcon(":/Chrome.png"), tr("Chrome"));
-    iconComboBox->addItem(QIcon(":/help.png"), tr("Help"));
-
-    showIconCheckBox = new QCheckBox(tr("Show icon"));
-    showIconCheckBox->setChecked(true);
-
+    apodGroupBox = new QGroupBox(tr("APOD Info"));
     dateLbl = new QLabel(tr("Date:"));
     dateVal = new QLabel(tr(date.c_str()));
 
@@ -149,10 +124,6 @@ void Window::createIconGroupBox()
     explanationVal->setWordWrap(true);
 
     QGridLayout* iconLayout = new QGridLayout;
-    /*iconLayout->addWidget(iconLabel);
-    iconLayout->addWidget(iconComboBox);
-    iconLayout->addStretch();
-    iconLayout->addWidget(showIconCheckBox);*/
     
     iconLayout->addWidget(dateLbl, 0, 0);
     iconLayout->addWidget(dateVal, 0, 1);
@@ -160,53 +131,14 @@ void Window::createIconGroupBox()
     iconLayout->addWidget(titleVal, 1, 1);
     iconLayout->addWidget(explanationLbl, 3, 0);
     iconLayout->addWidget(explanationVal, 3, 1);
-    iconGroupBox->setLayout(iconLayout);
+    apodGroupBox->setLayout(iconLayout);
 }
 
 void Window::createMessageGroupBox()
 {
     std::string date, title, name, estDt, missDistance, imgUrl, explanation;
 
-    messageGroupBox = new QGroupBox(tr("NeoWs info"));
-
-    typeLabel = new QLabel(tr("Type:"));
-
-    typeComboBox = new QComboBox;
-    typeComboBox->addItem(tr("None"), QSystemTrayIcon::NoIcon);
-    typeComboBox->addItem(style()->standardIcon(
-        QStyle::SP_MessageBoxInformation), tr("Information"),
-        QSystemTrayIcon::Information);
-    typeComboBox->addItem(style()->standardIcon(
-        QStyle::SP_MessageBoxWarning), tr("Warning"),
-        QSystemTrayIcon::Warning);
-    typeComboBox->addItem(style()->standardIcon(
-        QStyle::SP_MessageBoxCritical), tr("Critical"),
-        QSystemTrayIcon::Critical);
-    typeComboBox->setCurrentIndex(1);
-
-    durationLabel = new QLabel(tr("Duration:"));
-
-    durationSpinBox = new QSpinBox;
-    durationSpinBox->setRange(5, 60);
-    durationSpinBox->setSuffix(" s");
-    durationSpinBox->setValue(15);
-
-    durationWarningLabel = new QLabel(tr("(some systems might ignore this "
-        "hint)"));
-    durationWarningLabel->setIndent(10);
-
-    titleLabel = new QLabel(tr("Title:"));
-
-    titleEdit = new QLabel(tr("Cannot connect to network"));
-
-    bodyLabel = new QLabel(tr("Body:"));
-
-    bodyEdit = new QTextEdit;
-    bodyEdit->setPlainText(tr("Don't believe me. Honestly, I don't have a "
-        "clue.\nClick this balloon for details."));
-
-    showMessageButton = new QPushButton(tr("Show Message"));
-    showMessageButton->setDefault(true);
+    neowsGroupBox = new QGroupBox(tr("NeoWs info"));
     bool res = false;
     if (api) {
         res = api->getAPODBasicInfo(date, title);
@@ -233,19 +165,7 @@ void Window::createMessageGroupBox()
         warningLbl = new QLabel(tr("No Object found!!!"));
         messageLayout->addWidget(warningLbl);
     }
-    /*messageLayout->addWidget(typeLabel, 0, 0);
-    messageLayout->addWidget(typeComboBox, 0, 1, 1, 2);
-    messageLayout->addWidget(durationLabel, 1, 0);
-    messageLayout->addWidget(durationSpinBox, 1, 1);
-    messageLayout->addWidget(durationWarningLabel, 1, 2, 1, 3);
-    messageLayout->addWidget(titleLabel, 2, 0);
-    messageLayout->addWidget(titleEdit, 2, 1, 1, 4);
-    messageLayout->addWidget(bodyLabel, 3, 0);
-    messageLayout->addWidget(bodyEdit, 3, 1, 2, 4);
-    messageLayout->addWidget(showMessageButton, 5, 4);
-    messageLayout->setColumnStretch(3, 1);
-    messageLayout->setRowStretch(4, 1);*/
-    messageGroupBox->setLayout(messageLayout);
+    neowsGroupBox->setLayout(messageLayout);
 }
 
 void Window::createActions()
