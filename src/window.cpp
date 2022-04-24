@@ -5,7 +5,6 @@
 
 Window::Window(std::shared_ptr<durr::IApiHandler> api) : api(api)
 {
-    
     createIconGroupBox();
     createMessageGroupBox();
     createActions();
@@ -25,6 +24,7 @@ Window::Window(std::shared_ptr<durr::IApiHandler> api) : api(api)
     showMessage();
     setWindowTitle(tr("Systray"));
     resize(400, 300);
+    hide();
 }
 
 void Window::setVisible(bool visible)

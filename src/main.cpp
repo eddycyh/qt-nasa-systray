@@ -8,7 +8,6 @@
 #include "IApiHandler.h"
 
 std::string apiKey = "70O0cmhoP9IZshLlLVoGlN0kKq0qNy6cjvZeIvLx";
-std::string backgroundImg = "background.jpg";
 int main(int argc, char* argv[])
 {
     Q_INIT_RESOURCE(systray);
